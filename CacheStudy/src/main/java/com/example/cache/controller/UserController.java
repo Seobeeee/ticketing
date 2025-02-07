@@ -1,5 +1,6 @@
 package com.example.cache.controller;
 
+import com.example.cache.domain.entity.RedisHashUser;
 import com.example.cache.domain.entity.User;
 import com.example.cache.domain.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,11 @@ public class UserController {
 
     @GetMapping("/users/{id}")
     public User getUser(@PathVariable Long id) {
-        return userService.getUser(id);
+        return userService.getUser3(id);
+    }
+
+    @GetMapping("/redishash-user/{id}")
+    public RedisHashUser getUser2(@PathVariable Long id) {
+        return userService.getUser2(id);
     }
 }
