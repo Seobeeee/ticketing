@@ -1,0 +1,13 @@
+spring:
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6680
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3307/test
+    username: root
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
