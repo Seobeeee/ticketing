@@ -54,3 +54,58 @@ public class RedisConfig {
         return template;
     }
 ```
+
+아래 소스는 SpringBoot Cache를 사용하기 위한 CacheConfig파일의 일부로서, 
+TTL을 설정하여 사용한 Config 설정입니다.
+```Java
+
+@Configuration
+public class CacheConfig {
+
+    public static final String CACHE1 = "cache1";
+    public static final String CACHE2 = "cache2";
+
+    @AllArgsConstructor
+    @Getter
+    public static class CacheProperty{
+        private String name;
+        private Integer ttl;
+    }
+
+    @Bean
+    public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer(){
+        PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator
+                .builder()
+                .allowIfSubType(Object.class)
+                .build();
+
+        var objectMapper = new ObjectMapper()
+                // Deserialization 과정에서 모르는 값이 있으면 무효처리, 해당 설정을 진행하지 않을 경우 실패 처리 됨.
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .registerModule(new JavaTimeModule())
+                // 클래스 정보를 같이 저장하여 Deserialize할 때 에러가 나지 않게 하기 위함.
+                .activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL)
+                .disable(SerializationFeature.WRITE_DATE_KEYS_AS_TIMESTAMPS);
+
+        List<CacheProperty> properties = List.of(
+                new CacheProperty(CACHE1, 300),
+                new CacheProperty(CACHE2, 30)
+        );
+
+        return (builder -> {
+            properties.forEach(i -> {
+                builder.withCacheConfiguration(i.getName(), RedisCacheConfiguration
+                        .defaultCacheConfig()
+                        .disableCachingNullValues()
+                        .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                        .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer(objectMapper)))
+                        .entryTtl(Duration.ofSeconds(i.getTtl())));
+            });
+        });
+    }
+}
+```
+위와 같이 Config를 설정 후 Application 소스에 아래의 어노테이션을 추가해줍니다.
+```Java
+@EnableCaching
+```
